@@ -268,7 +268,7 @@ function NotifBell({count,onOpen}){return <button onClick={onOpen} style={{posit
 function NotifPanel({notifs,onClose,onMarkAll,onMarkOne}){
   return (
     <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",justifyContent:"flex-end"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{width:360,maxWidth:"100vw",height:"100vh",background:"var(--card)",borderLeft:"1px solid var(--border)",display:"flex",flexDirection:"column",boxShadow:"-8px 0 32px #0004"}}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"min(360px, 100vw)",maxWidth:"100vw",height:"100vh",background:"var(--card)",borderLeft:"1px solid var(--border)",display:"flex",flexDirection:"column",boxShadow:"-8px 0 32px #0004"}}>
         <div style={{padding:"18px 20px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontWeight:800,fontSize:16,color:"var(--text)"}}>🔔 Notifications</span>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -324,7 +324,7 @@ function AnnouncementsSection({announcements,isAdmin,onAdd,onDelete}){
         </div>
       )}
       {expanded&&announcements.map(a=>(
-        <div key={a.id} style={{background:a.important?"var(--ann-imp)":"var(--card)",border:`1px solid ${a.important?"#ef4444":"var(--border)"}`,borderLeft:`4px solid ${a.important?"#ef4444":"var(--accent)"}`,borderRadius:10,padding:"16px 20px",marginBottom:10,position:"relative"}}>
+        <div key={a.id} style={{background:a.important?"var(--ann-imp)":"var(--card)",border:`1px solid ${a.important?"#ef4444":"var(--border)"}`,borderLeft:`4px solid ${a.important?"#ef4444":"var(--accent)"}`,borderRadius:10,padding:"14px 16px",marginBottom:10,position:"relative"}}>
           {a.important&&<span style={{position:"absolute",top:10,right:12,fontSize:11,fontWeight:700,color:"#ef4444",background:"#ef444415",padding:"2px 8px",borderRadius:4}}>⚠ IMPORTANT</span>}
           <div style={{fontWeight:700,fontSize:15,color:"var(--text)",marginBottom:6,paddingRight:90}}>{a.title}</div>
           <div style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.6,marginBottom:10}}>{a.body}</div>
@@ -354,7 +354,7 @@ function ReplyBox({onSubmit}){
 function PostCard({post,userRegNum,isAdmin,identityMap,onUpvote,onReply,onUpvoteReply,onPin,expanded,onToggle}){
   const isUpvoted=(post.upvotes||[]).includes(userRegNum);
   return(
-    <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.pinned?"4px solid var(--accent)":undefined,padding:"20px 24px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
+    <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.pinned?"4px solid var(--accent)":undefined,padding:"16px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
       <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
         <Avatar name={post.author}/>
         <div style={{flex:1,minWidth:0}}>
@@ -453,7 +453,7 @@ function ProfileModal({session,onClose,posts,adminTier,isSuperAdmin,grantedAdmin
   const totalRe=myPosts.reduce((a,p)=>a+(p.replies||[]).length,0);
   return(
     <div style={{position:"fixed",inset:0,background:"#000a",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
-      <div style={{background:"var(--card)",borderRadius:16,padding:32,width:"100%",maxWidth:420,border:"1px solid var(--border)",textAlign:"center",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
+      <div style={{background:"var(--card)",borderRadius:16,padding:"24px 20px",width:"100%",maxWidth:420,border:"1px solid var(--border)",textAlign:"center",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
         <button onClick={onClose} style={{position:"absolute",right:16,top:16,background:"none",border:"none",fontSize:22,cursor:"pointer",color:"var(--text-muted)"}}>×</button>
         <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><Avatar name={displayName} size={72}/></div>
         <h2 style={{margin:"0 0 2px",color:"var(--text)",fontSize:22}}>{displayName}</h2>
@@ -683,26 +683,36 @@ function ForumApp({session,onLogout}){
 
   return(
     <div style={{...css,minHeight:"100vh",background:"var(--bg)",fontFamily:"'DM Sans','Segoe UI',sans-serif",color:"var(--text)"}}>
-      <div style={{background:"var(--card)",borderBottom:"1px solid var(--border)",padding:"0 24px",display:"flex",alignItems:"center",gap:12,height:60,position:"sticky",top:0,zIndex:50}}>
-        <span style={{fontSize:20,fontWeight:900,letterSpacing:"-0.03em",color:"var(--accent)"}}>🎓 ClassForum</span>
-        <span style={{fontSize:11,color:"var(--text-muted)"}}>UCC Dominase · AH/MDL/25</span>
-        <div style={{flex:1}}/>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search posts..." style={{background:"var(--input-bg)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:8,padding:"7px 14px",fontSize:13,width:170,fontFamily:"inherit",outline:"none"}}/>
-        <button onClick={()=>setDarkMode(d=>!d)} style={{background:"var(--btn-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:16,lineHeight:1}}>{darkMode?"☀️":"🌙"}</button>
-        <NotifBell count={unreadCount} onOpen={()=>setShowNotifs(true)}/>
-        <button onClick={()=>setShowProfile(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><Avatar name={displayName} size={34}/></button>
-        <button onClick={()=>setShowNewPost(true)} style={{background:"var(--accent)",color:"#fff",border:"none",borderRadius:9,padding:"8px 16px",cursor:"pointer",fontWeight:700,fontSize:14}}>+ New Post</button>
+      {/* ── Topbar: two rows on mobile, one row on desktop ── */}
+      <div style={{background:"var(--card)",borderBottom:"1px solid var(--border)",position:"sticky",top:0,zIndex:50}}>
+        {/* Row 1: logo + action icons */}
+        <div style={{padding:"0 16px",display:"flex",alignItems:"center",gap:8,height:54}}>
+          <span style={{fontSize:19,fontWeight:900,letterSpacing:"-0.03em",color:"var(--accent)",whiteSpace:"nowrap"}}>🎓 ClassForum</span>
+          <span style={{fontSize:10,color:"var(--text-muted)",whiteSpace:"nowrap",display:"none"}} className="desktop-subtitle">UCC Dominase · AH/MDL/25</span>
+          <div style={{flex:1}}/>
+          <button onClick={()=>setDarkMode(d=>!d)} style={{background:"var(--btn-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>{darkMode?"☀️":"🌙"}</button>
+          <NotifBell count={unreadCount} onOpen={()=>setShowNotifs(true)}/>
+          <button onClick={()=>setShowProfile(true)} style={{background:"none",border:"none",cursor:"pointer",padding:2,flexShrink:0}}><Avatar name={displayName} size={32}/></button>
+          <button onClick={()=>setShowNewPost(true)} style={{background:"var(--accent)",color:"#fff",border:"none",borderRadius:9,padding:"7px 14px",cursor:"pointer",fontWeight:700,fontSize:13,flexShrink:0,whiteSpace:"nowrap"}}>+ Post</button>
+        </div>
+        {/* Row 2: search bar (full width on mobile) */}
+        <div style={{padding:"0 16px 10px"}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search posts..."
+            style={{width:"100%",background:"var(--input-bg)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:8,padding:"8px 14px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+        </div>
       </div>
 
-      <div style={{maxWidth:780,margin:"0 auto",padding:"24px 16px"}}>
+      <div style={{maxWidth:780,margin:"0 auto",padding:"16px 12px"}}>
         <AnnouncementsSection announcements={announcements} isAdmin={isAdmin} onAdd={addAnn} onDelete={deleteAnn}/>
-        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-          {CATEGORIES.map(c=><button key={c.id} onClick={()=>setCategory(c.id)} style={{padding:"6px 16px",borderRadius:20,border:`1px solid ${category===c.id?"var(--accent)":"var(--border)"}`,background:category===c.id?"var(--accent)":"var(--btn-bg)",color:category===c.id?"#fff":"var(--text-muted)",cursor:"pointer",fontSize:13,fontWeight:600}}>{c.icon} {c.label}</button>)}
-          <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-            {[["newest","🕒 New"],["top","▲ Top"],["active","💬 Active"]].map(([v,l])=><button key={v} onClick={()=>setSortBy(v)} style={{padding:"6px 12px",borderRadius:20,border:`1px solid ${sortBy===v?"var(--accent)":"var(--border)"}`,background:sortBy===v?"var(--accent-dim)":"var(--btn-bg)",color:sortBy===v?"var(--accent)":"var(--text-muted)",cursor:"pointer",fontSize:12,fontWeight:600}}>{l}</button>)}
+        {/* Categories: horizontal scroll on mobile */}
+        <div style={{overflowX:"auto",marginBottom:8,paddingBottom:4,WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
+          <div style={{display:"flex",gap:8,width:"max-content",paddingBottom:2}}>
+            {CATEGORIES.map(c=><button key={c.id} onClick={()=>setCategory(c.id)} style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${category===c.id?"var(--accent)":"var(--border)"}`,background:category===c.id?"var(--accent)":"var(--btn-bg)",color:category===c.id?"#fff":"var(--text-muted)",cursor:"pointer",fontSize:13,fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>{c.icon} {c.label}</button>)}
+            <div style={{width:1,background:"var(--border)",margin:"0 4px",flexShrink:0}}/>
+            {[["newest","🕒"],["top","▲"],["active","💬"]].map(([v,icon])=><button key={v} onClick={()=>setSortBy(v)} title={v} style={{padding:"6px 12px",borderRadius:20,border:`1px solid ${sortBy===v?"var(--accent)":"var(--border)"}`,background:sortBy===v?"var(--accent-dim)":"var(--btn-bg)",color:sortBy===v?"var(--accent)":"var(--text-muted)",cursor:"pointer",fontSize:13,fontWeight:700,flexShrink:0}}>{icon}</button>)}
           </div>
         </div>
-        <div style={{display:"flex",gap:16,marginBottom:20,padding:"12px 20px",background:"var(--card)",borderRadius:10,border:"1px solid var(--border)",fontSize:13,color:"var(--text-muted)",flexWrap:"wrap",alignItems:"center"}}>
+        <div style={{display:"flex",gap:16,marginBottom:16,padding:"10px 16px",background:"var(--card)",borderRadius:10,border:"1px solid var(--border)",fontSize:12,color:"var(--text-muted)",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",whiteSpace:"nowrap",alignItems:"center"}}>
           <span>📄 <b style={{color:"var(--text)"}}>{posts.length}</b> posts</span>
           <span>💬 <b style={{color:"var(--text)"}}>{posts.reduce((a,p)=>a+(p.replies||[]).length,0)}</b> replies</span>
           <span>▲ <b style={{color:"var(--text)"}}>{posts.reduce((a,p)=>a+(p.upvotes||[]).length,0)}</b> upvotes</span>

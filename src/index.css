@@ -1,0 +1,14 @@
+/* Hide scrollbar on category strip but keep scrollability */
+div::-webkit-scrollbar { display: none; }
+
+/* Responsive: show subtitle only on wider screens */
+@media (min-width: 500px) {
+  .desktop-subtitle { display: inline !important; }
+}
+
+/* Prevent body scroll bounce on iOS */
+html, body { height: 100%; overflow-x: hidden; }
+body { -webkit-text-size-adjust: 100%; }
+
+/* Smooth tap highlights */
+button { -webkit-tap-highlight-color: transparent; }
