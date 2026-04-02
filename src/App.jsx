@@ -366,7 +366,7 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
   const isUpvoted=(post.upvotes||[]).includes(userRegNum);
   return(
     <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.category==="football"?"#16a34a55":post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.category==="football"?"4px solid #16a34a":post.pinned?"4px solid var(--accent)":undefined,padding:"16px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
-      <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+      <div onClick={!post.title?onToggle:undefined} style={{display:"flex",gap:12,alignItems:"flex-start",cursor:!post.title?"pointer":"default"}}>
         <Avatar name={post.author} photoUrl={avatarMap?.[post.reg_num]||null}/>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",marginBottom:4}}>
