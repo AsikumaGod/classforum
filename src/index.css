@@ -1,14 +1,35 @@
-/* Hide scrollbar on category strip but keep scrollability */
+/* ── Global reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Prevent ALL horizontal overflow — the root fix */
+html { overflow-x: hidden; }
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  min-height: 100%;
+}
+
+/* Every element must stay within viewport */
+#root { overflow-x: hidden; width: 100%; }
+
+/* Hide scrollbar track on scroll containers */
 div::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* Smooth tap — no blue flash on mobile */
+button, a { -webkit-tap-highlight-color: transparent; }
 
 /* Responsive: show subtitle only on wider screens */
-@media (min-width: 500px) {
+@media (min-width: 480px) {
   .desktop-subtitle { display: inline !important; }
 }
 
-/* Prevent body scroll bounce on iOS */
-html, body { height: 100%; overflow-x: hidden; }
-body { -webkit-text-size-adjust: 100%; }
+/* Ensure images never overflow their containers */
+img { max-width: 100%; height: auto; }
 
-/* Smooth tap highlights */
-button { -webkit-tap-highlight-color: transparent; }
+/* Prevent long words/URLs breaking layout */
+p, span, h1, h2, h3, h4 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}

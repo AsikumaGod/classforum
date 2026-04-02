@@ -333,9 +333,9 @@ function AnnouncementsSection({announcements,isAdmin,onAdd,onDelete}){
         </div>
       )}
       {expanded&&announcements.map(a=>(
-        <div key={a.id} style={{background:a.important?"var(--ann-imp)":"var(--card)",border:`1px solid ${a.important?"#ef4444":"var(--border)"}`,borderLeft:`4px solid ${a.important?"#ef4444":"var(--accent)"}`,borderRadius:10,padding:"14px 16px",marginBottom:10,position:"relative"}}>
+        <div key={a.id} style={{background:a.important?"var(--ann-imp)":"var(--card)",border:`1px solid ${a.important?"#ef4444":"var(--border)"}`,borderLeft:`4px solid ${a.important?"#ef4444":"var(--accent)"}`,borderRadius:10,padding:"12px 12px",marginBottom:8,position:"relative"}}>
           {a.important&&<span style={{position:"absolute",top:10,right:12,fontSize:11,fontWeight:700,color:"#ef4444",background:"#ef444415",padding:"2px 8px",borderRadius:4}}>⚠ IMPORTANT</span>}
-          <div style={{fontWeight:700,fontSize:15,color:"var(--text)",marginBottom:6,paddingRight:90}}>{a.title}</div>
+          <div style={{fontWeight:700,fontSize:15,color:"var(--text)",marginBottom:6,paddingRight:a.important?80:0}}>{a.title}</div>
           <div style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.6,marginBottom:10}}>{a.body}</div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <span style={{fontSize:12,color:"var(--text-muted)"}}>📌 {a.author} · {timeAgo(a.created_at)}</span>
@@ -381,7 +381,7 @@ function ReplyItem({r,postId,depth,userRegNum,avatarMap,identityMap,onUpvoteRepl
             <span style={{fontSize:11,color:"var(--text-muted)"}}>{timeAgo(r.created_at)}</span>
           </div>
           <p style={{margin:"0 0 7px",fontSize:14,color:"var(--text-secondary)",lineHeight:1.6}}>{r.body}</p>
-          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:2}}>
             <UpvoteBtn count={(r.upvotes||[]).length} active={(r.upvotes||[]).includes(userRegNum)} onClick={()=>onUpvoteReply(postId,r.id)}/>
             <button onClick={()=>setShowReplyBox(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:"var(--accent)",fontWeight:600,padding:0}}>
               {showReplyBox?"Cancel":"↩ Reply"}
@@ -450,7 +450,7 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
   const canDelete=isAdmin||post.reg_num===userRegNum;
   const isUpvoted=(post.upvotes||[]).includes(userRegNum);
   return(
-    <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.category==="football"?"#16a34a55":post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.category==="football"?"4px solid #16a34a":post.pinned?"4px solid var(--accent)":undefined,padding:"16px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
+    <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.category==="football"?"#16a34a55":post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.category==="football"?"4px solid #16a34a":post.pinned?"4px solid var(--accent)":undefined,padding:"12px 12px 14px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
       <div onClick={!post.title?onToggle:undefined} style={{display:"flex",gap:12,alignItems:"flex-start",cursor:!post.title?"pointer":"default"}}>
         <Avatar name={post.author} photoUrl={avatarMap?.[post.reg_num]||null}/>
         <div style={{flex:1,minWidth:0}}>
@@ -861,36 +861,37 @@ function ForumApp({session,onLogout}){
 
   return(
     <div style={{...css,minHeight:"100vh",background:"var(--bg)",fontFamily:"'DM Sans','Segoe UI',sans-serif",color:"var(--text)"}}>
-      {/* ── Topbar: two rows on mobile, one row on desktop ── */}
+      {/* ── Topbar ── */}
       <div style={{background:"var(--card)",borderBottom:"1px solid var(--border)",position:"sticky",top:0,zIndex:50}}>
-        {/* Row 1: logo + action icons */}
-        <div style={{padding:"0 16px",display:"flex",alignItems:"center",gap:8,height:54}}>
-          <span style={{fontSize:19,fontWeight:900,letterSpacing:"-0.03em",color:"var(--accent)",whiteSpace:"nowrap"}}>🎓 ClassForum</span>
-          <span style={{fontSize:10,color:"var(--text-muted)",whiteSpace:"nowrap",display:"none"}} className="desktop-subtitle">UCC Dominase · AH/MDL/25</span>
-          <div style={{flex:1}}/>
-          <button onClick={()=>setDarkMode(d=>!d)} style={{background:"var(--btn-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>{darkMode?"☀️":"🌙"}</button>
+        <div style={{padding:"0 12px",display:"flex",alignItems:"center",gap:6,height:52,minWidth:0}}>
+          {/* Logo — shrinks gracefully */}
+          <span style={{fontWeight:900,letterSpacing:"-0.03em",color:"var(--accent)",whiteSpace:"nowrap",fontSize:"clamp(14px,4vw,19px)",flexShrink:0}}>🎓 ClassForum</span>
+          <div style={{flex:1,minWidth:0}}/>
+          {/* Icon buttons — fixed small size */}
+          <button onClick={()=>setDarkMode(d=>!d)} style={{background:"var(--btn-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 8px",cursor:"pointer",fontSize:14,lineHeight:1,flexShrink:0}}>{darkMode?"☀️":"🌙"}</button>
           <NotifBell count={unreadCount} onOpen={()=>setShowNotifs(true)}/>
-          <button onClick={()=>setShowProfile(true)} style={{background:"none",border:"none",cursor:"pointer",padding:2,flexShrink:0}}><Avatar name={displayName} size={32} photoUrl={avatarMap[regNum]||null}/></button>
-          <button onClick={()=>setShowNewPost(true)} style={{background:"var(--accent)",color:"#fff",border:"none",borderRadius:9,padding:"7px 14px",cursor:"pointer",fontWeight:700,fontSize:13,flexShrink:0,whiteSpace:"nowrap"}}>+ Post</button>
+          <button onClick={()=>setShowProfile(true)} style={{background:"none",border:"none",cursor:"pointer",padding:2,flexShrink:0}}><Avatar name={displayName} size={30} photoUrl={avatarMap[regNum]||null}/></button>
+          {/* + Post button — always visible, shrinks text on tiny screens */}
+          <button onClick={()=>setShowNewPost(true)} style={{background:"var(--accent)",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontWeight:700,fontSize:"clamp(11px,3vw,13px)",flexShrink:0,whiteSpace:"nowrap"}}>+ Post</button>
         </div>
-        {/* Row 2: search bar (full width on mobile) */}
-        <div style={{padding:"0 16px 10px"}}>
+        {/* Search row */}
+        <div style={{padding:"0 12px 8px"}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search posts..."
-            style={{width:"100%",background:"var(--input-bg)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:8,padding:"8px 14px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+            style={{width:"100%",background:"var(--input-bg)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:8,padding:"7px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
         </div>
       </div>
 
-      <div style={{maxWidth:780,margin:"0 auto",padding:"16px 12px"}}>
+      <div style={{maxWidth:780,margin:"0 auto",padding:"12px 10px",boxSizing:"border-box"}}>
         <AnnouncementsSection announcements={announcements} isAdmin={isAdmin} onAdd={addAnn} onDelete={deleteAnn}/>
         {/* Categories: horizontal scroll on mobile */}
-        <div style={{overflowX:"auto",marginBottom:8,paddingBottom:4,WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
+        <div style={{overflowX:"auto",marginBottom:8,paddingBottom:2,WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",margin:"0 -10px 8px",padding:"0 10px 2px"}}>
           <div style={{display:"flex",gap:8,width:"max-content",paddingBottom:2}}>
             {CATEGORIES.map(c=><button key={c.id} onClick={()=>setCategory(c.id)} style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${category===c.id?"var(--accent)":"var(--border)"}`,background:category===c.id?"var(--accent)":"var(--btn-bg)",color:category===c.id?"#fff":"var(--text-muted)",cursor:"pointer",fontSize:13,fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>{c.icon} {c.label}</button>)}
             <div style={{width:1,background:"var(--border)",margin:"0 4px",flexShrink:0}}/>
             {[["newest","🕒"],["top","▲"],["active","💬"]].map(([v,icon])=><button key={v} onClick={()=>setSortBy(v)} title={v} style={{padding:"6px 12px",borderRadius:20,border:`1px solid ${sortBy===v?"var(--accent)":"var(--border)"}`,background:sortBy===v?"var(--accent-dim)":"var(--btn-bg)",color:sortBy===v?"var(--accent)":"var(--text-muted)",cursor:"pointer",fontSize:13,fontWeight:700,flexShrink:0}}>{icon}</button>)}
           </div>
         </div>
-        <div style={{display:"flex",gap:16,marginBottom:16,padding:"10px 16px",background:"var(--card)",borderRadius:10,border:"1px solid var(--border)",fontSize:12,color:"var(--text-muted)",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",whiteSpace:"nowrap",alignItems:"center"}}>
+        <div style={{display:"flex",gap:10,marginBottom:12,padding:"8px 12px",background:"var(--card)",borderRadius:10,border:"1px solid var(--border)",fontSize:11,color:"var(--text-muted)",flexWrap:"wrap",alignItems:"center"}}>
           <span>📄 <b style={{color:"var(--text)"}}>{posts.length}</b> posts</span>
           <span>💬 <b style={{color:"var(--text)"}}>{posts.reduce((a,p)=>a+(p.replies||[]).length,0)}</b> replies</span>
           <span>▲ <b style={{color:"var(--text)"}}>{posts.reduce((a,p)=>a+(p.upvotes||[]).length,0)}</b> upvotes</span>
