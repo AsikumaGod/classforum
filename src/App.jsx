@@ -100,6 +100,7 @@ const CATEGORIES = [
   {id:"resources",label:"Resources",icon:"📚"},
   {id:"questions",label:"Q&A",icon:"❓"},
   {id:"projects",label:"Projects",icon:"🚀"},
+  {id:"football",label:"Football Corner",icon:"⚽"},
 ];
 const AVATARS = ["🦁","🐺","🦊","🐻","🦅","🐬","🦋","🐙","🦚","🐝","🐉","🦜","🦭","🐸","🦩"];
 const COLORS  = ["#4f46e5","#0891b2","#059669","#d97706","#dc2626","#7c3aed","#0d9488","#ea580c"];
@@ -259,8 +260,16 @@ function AuthScreen({ onLogin }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // UI ATOMS
 // ═══════════════════════════════════════════════════════════════════════════════
-function Avatar({name,size=36}){const c=getColor(name);return <div style={{width:size,height:size,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.5,flexShrink:0,boxShadow:`0 0 0 2px ${c}33`}}>{getAvatar(name)}</div>;}
-function Badge({label}){const cat=CATEGORIES.find(c=>c.id===label);return <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",padding:"2px 8px",borderRadius:4,background:"var(--badge-bg)",color:"var(--accent)",border:"1px solid var(--accent-dim)"}}>{cat?.icon} {cat?.label||label}</span>;}
+function Avatar({name,size=36,photoUrl=null}){
+  const c=getColor(name);
+  if(photoUrl) return <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,boxShadow:`0 0 0 2px ${c}44`,overflow:"hidden",background:c}}><img src={photoUrl} alt={name} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>;
+  return <div style={{width:size,height:size,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.5,flexShrink:0,boxShadow:`0 0 0 2px ${c}33`}}>{getAvatar(name)}</div>;
+}
+function Badge({label}){
+  const cat=CATEGORIES.find(c=>c.id===label);
+  const isFootball=label==="football";
+  return <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",padding:"2px 8px",borderRadius:4,background:isFootball?"#16a34a18":"var(--badge-bg)",color:isFootball?"#16a34a":"var(--accent)",border:`1px solid ${isFootball?"#16a34a44":"var(--accent-dim)"}`}}>{cat?.icon} {cat?.label||label}</span>;
+}
 function UpvoteBtn({count,active,onClick}){return <button onClick={onClick} style={{display:"flex",alignItems:"center",gap:5,background:active?"var(--accent)":"var(--btn-bg)",color:active?"#fff":"var(--text-muted)",border:`1px solid ${active?"var(--accent)":"var(--border)"}`,borderRadius:20,padding:"4px 12px",cursor:"pointer",fontSize:13,fontWeight:600,transition:"all 0.15s"}}>▲ {count}</button>;}
 function NotifBell({count,onOpen}){return <button onClick={onOpen} style={{position:"relative",background:"var(--btn-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:18,lineHeight:1}}>🔔{count>0&&<span style={{position:"absolute",top:-5,right:-5,background:"#ef4444",color:"#fff",borderRadius:10,fontSize:10,fontWeight:800,padding:"1px 5px",minWidth:16,textAlign:"center",lineHeight:"16px"}}>{count>9?"9+":count}</span>}</button>;}
 
@@ -351,12 +360,12 @@ function ReplyBox({onSubmit}){
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({post,userRegNum,isAdmin,identityMap,onUpvote,onReply,onUpvoteReply,onPin,expanded,onToggle}){
+function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onReply,onUpvoteReply,onPin,expanded,onToggle}){
   const isUpvoted=(post.upvotes||[]).includes(userRegNum);
   return(
-    <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.pinned?"4px solid var(--accent)":undefined,padding:"16px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
+    <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.category==="football"?"#16a34a55":post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.category==="football"?"4px solid #16a34a":post.pinned?"4px solid var(--accent)":undefined,padding:"16px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
       <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-        <Avatar name={post.author}/>
+        <Avatar name={post.author} photoUrl={avatarMap?.[post.reg_num]||null}/>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",marginBottom:4}}>
             <span style={{fontWeight:700,fontSize:14,color:getColor(post.author)}}>{post.author}</span>
@@ -382,7 +391,7 @@ function PostCard({post,userRegNum,isAdmin,identityMap,onUpvote,onReply,onUpvote
             <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:12}}>
               {post.replies.map(r=>(
                 <div key={r.id} style={{display:"flex",gap:10,paddingLeft:16,borderLeft:"2px solid var(--accent-dim)"}}>
-                  <Avatar name={r.author} size={28}/>
+                  <Avatar name={r.author} size={28} photoUrl={avatarMap?.[r.reg_num]||null}/>
                   <div style={{flex:1}}>
                     <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:3,flexWrap:"wrap"}}>
                       <span style={{fontWeight:700,fontSize:13,color:getColor(r.author)}}>{r.author}</span>
@@ -445,7 +454,47 @@ function GrantAdminPanel({grantedAdmins,isSuperAdmin,onGrant,onRevoke}){
 }
 
 // ── Profile Modal ─────────────────────────────────────────────────────────────
-function ProfileModal({session,onClose,posts,adminTier,isSuperAdmin,grantedAdmins,onGrantAdmin,onRevokeAdmin,onLogout,showIdentity,onToggleIdentity}){
+
+function AvatarUploader({displayName,avatarUrl,onUpload,onRemove}){
+  const fileRef = useRef();
+  const [hovering,setHovering] = useState(false);
+  const [uploading,setUploading] = useState(false);
+
+  const handleChange=async(e)=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    setUploading(true);
+    await onUpload(file);
+    setUploading(false);
+  };
+
+  return(
+    <div style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+      <div
+        onClick={()=>!uploading&&fileRef.current.click()}
+        onMouseEnter={()=>setHovering(true)}
+        onMouseLeave={()=>setHovering(false)}
+        style={{position:"relative",width:80,height:80,borderRadius:"50%",cursor:"pointer",flexShrink:0}}
+      >
+        <Avatar name={displayName} size={80} photoUrl={avatarUrl}/>
+        {/* Overlay */}
+        <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"#000",opacity:hovering||uploading?0.55:0,transition:"opacity 0.2s",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <span style={{color:"#fff",fontSize:uploading?12:22}}>{uploading?"...":"📷"}</span>
+        </div>
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleChange}/>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <button onClick={()=>fileRef.current.click()} style={{fontSize:12,color:"var(--accent)",background:"none",border:"1px solid var(--accent-dim)",borderRadius:6,padding:"3px 10px",cursor:"pointer",fontWeight:600}}>
+          {avatarUrl?"Change photo":"Upload photo"}
+        </button>
+        {avatarUrl&&<button onClick={onRemove} style={{fontSize:12,color:"var(--text-muted)",background:"none",border:"1px solid var(--border)",borderRadius:6,padding:"3px 10px",cursor:"pointer"}}>Remove</button>}
+      </div>
+      <p style={{margin:0,fontSize:11,color:"var(--text-muted)"}}>JPG, PNG or WebP · max 2MB</p>
+    </div>
+  );
+}
+
+function ProfileModal({session,onClose,posts,adminTier,isSuperAdmin,grantedAdmins,onGrantAdmin,onRevokeAdmin,onLogout,showIdentity,onToggleIdentity,avatarUrl,onAvatarUpload,onAvatarRemove}){
   const {displayName,regNum}=session;
   const isAdmin=adminTier!==null;
   const myPosts=posts.filter(p=>p.reg_num===regNum);
@@ -455,7 +504,7 @@ function ProfileModal({session,onClose,posts,adminTier,isSuperAdmin,grantedAdmin
     <div style={{position:"fixed",inset:0,background:"#000a",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
       <div style={{background:"var(--card)",borderRadius:16,padding:"24px 20px",width:"100%",maxWidth:420,border:"1px solid var(--border)",textAlign:"center",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
         <button onClick={onClose} style={{position:"absolute",right:16,top:16,background:"none",border:"none",fontSize:22,cursor:"pointer",color:"var(--text-muted)"}}>×</button>
-        <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><Avatar name={displayName} size={72}/></div>
+        <AvatarUploader displayName={displayName} avatarUrl={avatarUrl} onUpload={onAvatarUpload} onRemove={onAvatarRemove}/>
         <h2 style={{margin:"0 0 2px",color:"var(--text)",fontSize:22}}>{displayName}</h2>
         <p style={{margin:"0 0 2px",color:"var(--text-secondary)",fontSize:13}}>{STUDENT_NAMES[regNum]||""}</p>
         <p style={{margin:"0 0 2px",color:"var(--accent)",fontSize:11,fontWeight:700,letterSpacing:"0.06em"}}>{regNum}</p>
@@ -502,6 +551,7 @@ function ForumApp({session,onLogout}){
   const [grantedAdmins,setGrantedAdmins]=useState([]);
   const [showIdentity,setShowIdentity]=useState(false);
   const [identityMap,setIdentityMap]=useState({});
+  const [avatarMap,setAvatarMap]=useState({}); // regNum -> photoUrl
   const [showNotifs,setShowNotifs]=useState(false);
   const [loaded,setLoaded]=useState(false);
   const isAdmin=adminTier!==null;
@@ -531,12 +581,13 @@ function ForumApp({session,onLogout}){
       setGrantedAdmins(grantedList);
       setAdminTier(getAdminTier(regNum,grantedList));
 
-      const {data:acct}=await sb.from("accounts").select("show_identity").eq("reg_num",regNum).maybeSingle();
+      const {data:acct}=await sb.from("accounts").select("show_identity,avatar_url").eq("reg_num",regNum).maybeSingle();
       setShowIdentity(acct?.show_identity||false);
 
-      const {data:allAccts}=await sb.from("accounts").select("reg_num,show_identity");
-      const imap={};(allAccts||[]).forEach(a=>{imap[a.reg_num]=a.show_identity;});
-      setIdentityMap(imap);
+      const {data:allAccts}=await sb.from("accounts").select("reg_num,show_identity,avatar_url");
+      const imap={};const amap={};
+      (allAccts||[]).forEach(a=>{imap[a.reg_num]=a.show_identity;if(a.avatar_url)amap[a.reg_num]=a.avatar_url;});
+      setIdentityMap(imap);setAvatarMap(amap);
 
       setLoaded(true);
     })();
@@ -664,6 +715,25 @@ function ForumApp({session,onLogout}){
     setIdentityMap(prev=>({...prev,[regNum]:next}));
   };
 
+  const handleAvatarUpload=async(file)=>{
+    if(!file) return;
+    if(file.size>2*1024*1024){alert("Image must be under 2MB.");return;}
+    const ext=file.name.split(".").pop().toLowerCase();
+    if(!["jpg","jpeg","png","webp","gif"].includes(ext)){alert("Please upload a JPG, PNG, WebP or GIF.");return;}
+    const path=`avatars/${regNum.replace(/\//g,"_")}.${ext}`;
+    const {error:upErr}=await sb.storage.from("avatars").upload(path,file,{upsert:true,contentType:file.type});
+    if(upErr){alert("Upload failed: "+upErr.message);return;}
+    const {data:{publicUrl}}=sb.storage.from("avatars").getPublicUrl(path);
+    const urlWithBust=publicUrl+"?t="+Date.now();
+    await sb.from("accounts").update({avatar_url:urlWithBust}).eq("reg_num",regNum);
+    setAvatarMap(prev=>({...prev,[regNum]:urlWithBust}));
+  };
+
+  const handleAvatarRemove=async()=>{
+    await sb.from("accounts").update({avatar_url:null}).eq("reg_num",regNum);
+    setAvatarMap(prev=>({...prev,[regNum]:null}));
+  };
+
   const myNotifs=notifications.filter(n=>n.recipient===regNum||n.recipient==="__broadcast__");
   const unreadCount=myNotifs.filter(n=>!n.read).length;
 
@@ -692,7 +762,7 @@ function ForumApp({session,onLogout}){
           <div style={{flex:1}}/>
           <button onClick={()=>setDarkMode(d=>!d)} style={{background:"var(--btn-bg)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>{darkMode?"☀️":"🌙"}</button>
           <NotifBell count={unreadCount} onOpen={()=>setShowNotifs(true)}/>
-          <button onClick={()=>setShowProfile(true)} style={{background:"none",border:"none",cursor:"pointer",padding:2,flexShrink:0}}><Avatar name={displayName} size={32}/></button>
+          <button onClick={()=>setShowProfile(true)} style={{background:"none",border:"none",cursor:"pointer",padding:2,flexShrink:0}}><Avatar name={displayName} size={32} photoUrl={avatarMap[regNum]||null}/></button>
           <button onClick={()=>setShowNewPost(true)} style={{background:"var(--accent)",color:"#fff",border:"none",borderRadius:9,padding:"7px 14px",cursor:"pointer",fontWeight:700,fontSize:13,flexShrink:0,whiteSpace:"nowrap"}}>+ Post</button>
         </div>
         {/* Row 2: search bar (full width on mobile) */}
@@ -723,12 +793,12 @@ function ForumApp({session,onLogout}){
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {!loaded&&<div style={{textAlign:"center",padding:40,color:"var(--text-muted)"}}>Loading posts...</div>}
           {loaded&&filtered.length===0&&<div style={{textAlign:"center",padding:40,color:"var(--text-muted)"}}>No posts found. Be the first to post!</div>}
-          {filtered.map(post=><PostCard key={post.id} post={post} userRegNum={regNum} isAdmin={isAdmin} identityMap={identityMap} expanded={expandedId===post.id} onToggle={()=>setExpandedId(expandedId===post.id?null:post.id)} onUpvote={upvotePost} onReply={addReply} onUpvoteReply={upvoteReply} onPin={pinPost}/>)}
+          {filtered.map(post=><PostCard key={post.id} post={post} userRegNum={regNum} isAdmin={isAdmin} identityMap={identityMap} avatarMap={avatarMap} expanded={expandedId===post.id} onToggle={()=>setExpandedId(expandedId===post.id?null:post.id)} onUpvote={upvotePost} onReply={addReply} onUpvoteReply={upvoteReply} onPin={pinPost}/>)}
         </div>
       </div>
 
       {showNewPost&&<NewPostModal onClose={()=>setShowNewPost(false)} onSubmit={addPost}/>}
-      {showProfile&&<ProfileModal session={session} onClose={()=>setShowProfile(false)} posts={posts} adminTier={adminTier} isSuperAdmin={isSuperAdmin} grantedAdmins={grantedAdmins} onGrantAdmin={handleGrantAdmin} onRevokeAdmin={handleRevokeAdmin} onLogout={onLogout} showIdentity={showIdentity} onToggleIdentity={handleToggleIdentity}/>}
+      {showProfile&&<ProfileModal session={session} onClose={()=>setShowProfile(false)} posts={posts} adminTier={adminTier} isSuperAdmin={isSuperAdmin} grantedAdmins={grantedAdmins} onGrantAdmin={handleGrantAdmin} onRevokeAdmin={handleRevokeAdmin} onLogout={onLogout} showIdentity={showIdentity} onToggleIdentity={handleToggleIdentity} avatarUrl={avatarMap[regNum]||null} onAvatarUpload={handleAvatarUpload} onAvatarRemove={handleAvatarRemove}/>}
       {showNotifs&&<NotifPanel notifs={myNotifs} onClose={()=>setShowNotifs(false)} onMarkAll={markAllRead} onMarkOne={markOneRead}/>}
     </div>
   );
