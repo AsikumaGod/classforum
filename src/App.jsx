@@ -360,7 +360,9 @@ function ReplyBox({onSubmit}){
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onReply,onUpvoteReply,onPin,expanded,onToggle}){
+function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onReply,onUpvoteReply,onPin,onDelete,expanded,onToggle}){
+  const [confirmDelete,setConfirmDelete]=useState(false);
+  const canDelete=isAdmin||post.reg_num===userRegNum;
   const isUpvoted=(post.upvotes||[]).includes(userRegNum);
   return(
     <div style={{background:"var(--card)",borderRadius:12,border:`1px solid ${post.category==="football"?"#16a34a55":post.pinned?"var(--accent)":"var(--border)"}`,borderLeft:post.category==="football"?"4px solid #16a34a":post.pinned?"4px solid var(--accent)":undefined,padding:"16px",boxShadow:expanded?"0 4px 24px #0002":"none"}}>
@@ -386,7 +388,19 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
             <UpvoteBtn count={(post.upvotes||[]).length} active={isUpvoted} onClick={()=>onUpvote(post.id)}/>
             <span style={{fontSize:13,color:"var(--text-muted)"}}>💬 {(post.replies||[]).length} {(post.replies||[]).length===1?"reply":"replies"}</span>
             {isAdmin&&<button onClick={()=>onPin(post.id,!post.pinned)} style={{marginLeft:"auto",fontSize:12,color:post.pinned?"#ef4444":"var(--accent)",background:"none",border:`1px solid ${post.pinned?"#ef4444":"var(--accent-dim)"}`,borderRadius:6,padding:"3px 10px",cursor:"pointer",fontWeight:600}}>{post.pinned?"📌 Unpin":"📌 Pin to top"}</button>}
+            {canDelete&&!isAdmin&&<button onClick={()=>setConfirmDelete(true)} style={{marginLeft:"auto",fontSize:12,color:"#ef4444",background:"none",border:"1px solid #ef444440",borderRadius:6,padding:"3px 10px",cursor:"pointer",fontWeight:600}}>🗑 Delete</button>}
+            {canDelete&&isAdmin&&<button onClick={()=>setConfirmDelete(true)} style={{fontSize:12,color:"#ef4444",background:"none",border:"1px solid #ef444440",borderRadius:6,padding:"3px 10px",cursor:"pointer",fontWeight:600}}>🗑 Delete</button>}
           </div>
+          {confirmDelete&&(
+            <div style={{marginTop:12,padding:"14px 16px",background:"#ef444410",border:"1px solid #ef444440",borderRadius:10,display:"flex",flexDirection:"column",gap:10}}>
+              <p style={{margin:0,fontSize:14,color:"var(--text)",fontWeight:600}}>Delete this post?</p>
+              <p style={{margin:0,fontSize:13,color:"var(--text-muted)",lineHeight:1.5}}>This will permanently remove the post and all its replies. This cannot be undone.</p>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>{onDelete(post.id);setConfirmDelete(false);}} style={{background:"#ef4444",color:"#fff",border:"none",borderRadius:7,padding:"8px 18px",cursor:"pointer",fontWeight:700,fontSize:13}}>Yes, delete</button>
+                <button onClick={()=>setConfirmDelete(false)} style={{background:"var(--btn-bg)",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:7,padding:"8px 18px",cursor:"pointer",fontWeight:600,fontSize:13}}>Cancel</button>
+              </div>
+            </div>
+          )}
           {(post.replies||[]).length>0&&(
             <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:12}}>
               {post.replies.map(r=>(
@@ -683,6 +697,12 @@ function ForumApp({session,onLogout}){
 
   const pinPost=async(postId,pinned)=>{ await sb.from("posts").update({pinned}).eq("id",postId); };
 
+  const deletePost=async(postId)=>{
+    // replies and upvotes cascade-delete via foreign key constraints
+    await sb.from("posts").delete().eq("id",postId);
+    if(expandedId===postId) setExpandedId(null);
+  };
+
   const addAnn=async({title,body,important})=>{
     await sb.from("announcements").insert({id:`a${Date.now()}`,author:displayName,title,body,important});
     await addNotif("__broadcast__",`New announcement: "${title}"`,"📌");
@@ -793,7 +813,7 @@ function ForumApp({session,onLogout}){
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {!loaded&&<div style={{textAlign:"center",padding:40,color:"var(--text-muted)"}}>Loading posts...</div>}
           {loaded&&filtered.length===0&&<div style={{textAlign:"center",padding:40,color:"var(--text-muted)"}}>No posts found. Be the first to post!</div>}
-          {filtered.map(post=><PostCard key={post.id} post={post} userRegNum={regNum} isAdmin={isAdmin} identityMap={identityMap} avatarMap={avatarMap} expanded={expandedId===post.id} onToggle={()=>setExpandedId(expandedId===post.id?null:post.id)} onUpvote={upvotePost} onReply={addReply} onUpvoteReply={upvoteReply} onPin={pinPost}/>)}
+          {filtered.map(post=><PostCard key={post.id} post={post} userRegNum={regNum} isAdmin={isAdmin} identityMap={identityMap} avatarMap={avatarMap} expanded={expandedId===post.id} onToggle={()=>setExpandedId(expandedId===post.id?null:post.id)} onUpvote={upvotePost} onReply={addReply} onUpvoteReply={upvoteReply} onPin={pinPost} onDelete={deletePost}/>)}
         </div>
       </div>
 
