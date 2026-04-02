@@ -378,7 +378,7 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
             {post.pinned&&<span style={{fontSize:11,color:"var(--accent)",fontWeight:700}}>📌 Pinned</span>}
             <span style={{fontSize:12,color:"var(--text-muted)",marginLeft:"auto"}}>{timeAgo(post.created_at)}</span>
           </div>
-          <h3 onClick={onToggle} style={{margin:0,fontSize:17,fontWeight:700,color:"var(--text)",cursor:"pointer",lineHeight:1.3}}>{post.title}</h3>
+          {post.title?<h3 onClick={onToggle} style={{margin:0,fontSize:17,fontWeight:700,color:"var(--text)",cursor:"pointer",lineHeight:1.3}}>{post.title}</h3>:<p onClick={onToggle} style={{margin:0,fontSize:15,color:"var(--text-secondary)",cursor:"pointer",lineHeight:1.5,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{post.body}</p>}
         </div>
       </div>
       {expanded&&(
@@ -427,7 +427,7 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
       {!expanded&&(
         <div style={{display:"flex",gap:12,marginTop:10,alignItems:"center"}}>
           <UpvoteBtn count={(post.upvotes||[]).length} active={isUpvoted} onClick={()=>onUpvote(post.id)}/>
-          <span style={{fontSize:13,color:"var(--text-muted)",cursor:"pointer"}} onClick={onToggle}>💬 {(post.replies||[]).length} {(post.replies||[]).length===1?"reply":"replies"} · click to expand</span>
+          <span style={{fontSize:13,color:"var(--text-muted)",cursor:"pointer"}} onClick={onToggle}>💬 {(post.replies||[]).length} {(post.replies||[]).length===1?"reply":"replies"}{post.title?" · click to expand":""}</span>
         </div>
       )}
     </div>
@@ -437,13 +437,13 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
 // ── New Post Modal ────────────────────────────────────────────────────────────
 function NewPostModal({onClose,onSubmit}){
   const [title,setTitle]=useState("");const [body,setBody]=useState("");const [cat,setCat]=useState("general");
-  const submit=()=>{if(!title.trim()||!body.trim())return;onSubmit({title:title.trim(),body:body.trim(),category:cat});onClose();};
+  const submit=()=>{if(!body.trim())return;onSubmit({title:title.trim(),body:body.trim(),category:cat});onClose();};
   return(
     <div style={{position:"fixed",inset:0,background:"#000a",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
       <div style={{background:"var(--card)",borderRadius:16,padding:28,width:"100%",maxWidth:560,border:"1px solid var(--border)",boxShadow:"0 8px 40px #0004"}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:20}}><h2 style={{margin:0,fontSize:20,color:"var(--text)"}}>New Post</h2><button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"var(--text-muted)"}}>×</button></div>
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>{CATEGORIES.filter(c=>c.id!=="all").map(c=><button key={c.id} onClick={()=>setCat(c.id)} style={{padding:"5px 14px",borderRadius:20,border:`1px solid ${cat===c.id?"var(--accent)":"var(--border)"}`,background:cat===c.id?"var(--accent)":"var(--btn-bg)",color:cat===c.id?"#fff":"var(--text-muted)",cursor:"pointer",fontSize:13,fontWeight:600}}>{c.icon} {c.label}</button>)}</div>
-        <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Post title..." style={{width:"100%",marginBottom:12,background:"var(--input-bg)",color:"var(--text)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 14px",fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+        <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Title (optional)" style={{width:"100%",marginBottom:12,background:"var(--input-bg)",color:"var(--text)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 14px",fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
         <textarea value={body} onChange={e=>setBody(e.target.value)} placeholder="What's on your mind? Use @name to mention a classmate." rows={5} style={{width:"100%",marginBottom:16,background:"var(--input-bg)",color:"var(--text)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 14px",fontSize:14,fontFamily:"inherit",resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
         <div style={{display:"flex",justifyContent:"flex-end",gap:10}}><button onClick={onClose} style={{background:"var(--btn-bg)",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,padding:"9px 20px",cursor:"pointer",fontWeight:600}}>Cancel</button><button onClick={submit} style={{background:"var(--accent)",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",cursor:"pointer",fontWeight:700,fontSize:14}}>Publish</button></div>
       </div>
@@ -663,7 +663,8 @@ function ForumApp({session,onLogout}){
     const id=`p${Date.now()}`;
     await sb.from("posts").insert({id,author:displayName,reg_num:regNum,category,title,body,pinned:false});
     const mentions=extractMentions(body);
-    for(const m of mentions){ if(m!==displayName) await addNotif(m,`${displayName} mentioned you in "${title}"`,"💬"); }
+    const postLabel=title||body.slice(0,40)+(body.length>40?"...":"");
+    for(const m of mentions){ if(m!==displayName) await addNotif(m,`${displayName} mentioned you in "${postLabel}"`,"💬"); }
   };
 
   const upvotePost=async(postId)=>{
@@ -672,16 +673,18 @@ function ForumApp({session,onLogout}){
     if(already){ await sb.from("post_upvotes").delete().eq("post_id",postId).eq("reg_num",regNum); }
     else{
       await sb.from("post_upvotes").insert({post_id:postId,reg_num:regNum});
-      if(post.reg_num!==regNum) await addNotif(post.reg_num,`${displayName} upvoted your post "${post.title}"`,"▲");
+      const postLabel=post.title||post.body.slice(0,40)+(post.body.length>40?"...":"");
+      if(post.reg_num!==regNum) await addNotif(post.reg_num,`${displayName} upvoted your post "${postLabel}"`,"▲");
     }
   };
 
   const addReply=async(postId,text)=>{
     const post=posts.find(p=>p.id===postId);if(!post)return;
     await sb.from("replies").insert({id:`r${Date.now()}`,post_id:postId,author:displayName,reg_num:regNum,body:text});
-    if(post.reg_num!==regNum) await addNotif(post.reg_num,`${displayName} replied to your post "${post.title}"`,"💬");
+    const replyLabel=post.title||post.body.slice(0,40)+(post.body.length>40?"...":"");
+    if(post.reg_num!==regNum) await addNotif(post.reg_num,`${displayName} replied to your post "${replyLabel}"`,"💬");
     const mentions=extractMentions(text);
-    for(const m of mentions){ if(m!==displayName&&m!==post.author) await addNotif(m,`${displayName} mentioned you in a reply on "${post.title}"`,"💬"); }
+    for(const m of mentions){ if(m!==displayName&&m!==post.author) await addNotif(m,`${displayName} mentioned you in a reply on "${replyLabel}"`,"💬"); }
   };
 
   const upvoteReply=async(postId,replyId)=>{
@@ -691,7 +694,8 @@ function ForumApp({session,onLogout}){
     if(already){ await sb.from("reply_upvotes").delete().eq("reply_id",replyId).eq("reg_num",regNum); }
     else{
       await sb.from("reply_upvotes").insert({reply_id:replyId,reg_num:regNum});
-      if(reply.reg_num!==regNum) await addNotif(reply.reg_num,`${displayName} upvoted your reply on "${post.title}"`,"▲");
+      const upLabel=post.title||post.body.slice(0,40)+(post.body.length>40?"...":"");
+        if(reply.reg_num!==regNum) await addNotif(reply.reg_num,`${displayName} upvoted your reply on "${upLabel}"`,"▲");
     }
   };
 
