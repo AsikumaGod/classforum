@@ -360,6 +360,91 @@ function ReplyBox({onSubmit}){
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
+
+// ── RepliesSection: threaded replies with show/hide and reply-to-reply ────────
+function ReplyItem({r,postId,depth,userRegNum,avatarMap,identityMap,onUpvoteReply,onReply,allReplies}){
+  const [showReplyBox,setShowReplyBox]=useState(false);
+  const [showNested,setShowNested]=useState(true);
+  const nested=allReplies.filter(x=>x.parent_reply_id===r.id);
+  const indent=Math.min(depth,3); // max 3 levels of indent
+
+  return(
+    <div style={{marginLeft:indent>0?16:0,borderLeft:indent>0?"2px solid var(--accent-dim)":undefined,paddingLeft:indent>0?12:0}}>
+      <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+        <Avatar name={r.author} size={26} photoUrl={avatarMap?.[r.reg_num]||null}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3,flexWrap:"wrap"}}>
+            <span style={{fontWeight:700,fontSize:13,color:getColor(r.author)}}>{r.author}</span>
+            {identityMap?.[r.reg_num]&&r.reg_num&&(
+              <span style={{fontSize:11,color:"var(--text-muted)",fontWeight:500}}>{STUDENT_NAMES[r.reg_num]||""} · {r.reg_num}</span>
+            )}
+            <span style={{fontSize:11,color:"var(--text-muted)"}}>{timeAgo(r.created_at)}</span>
+          </div>
+          <p style={{margin:"0 0 7px",fontSize:14,color:"var(--text-secondary)",lineHeight:1.6}}>{r.body}</p>
+          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+            <UpvoteBtn count={(r.upvotes||[]).length} active={(r.upvotes||[]).includes(userRegNum)} onClick={()=>onUpvoteReply(postId,r.id)}/>
+            <button onClick={()=>setShowReplyBox(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:"var(--accent)",fontWeight:600,padding:0}}>
+              {showReplyBox?"Cancel":"↩ Reply"}
+            </button>
+            {nested.length>0&&(
+              <button onClick={()=>setShowNested(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:"var(--text-muted)",fontWeight:600,padding:0}}>
+                {showNested?`▲ Hide ${nested.length}`:`▼ Show ${nested.length}`} {nested.length===1?"reply":"replies"}
+              </button>
+            )}
+          </div>
+          {showReplyBox&&(
+            <div style={{marginTop:8}}>
+              <ReplyBox onSubmit={text=>{onReply(postId,text,r.id);setShowReplyBox(false);}}/>
+            </div>
+          )}
+        </div>
+      </div>
+      {showNested&&nested.length>0&&(
+        <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:10}}>
+          {nested.map(child=>(
+            <ReplyItem key={child.id} r={child} postId={postId} depth={depth+1}
+              userRegNum={userRegNum} avatarMap={avatarMap} identityMap={identityMap}
+              onUpvoteReply={onUpvoteReply} onReply={onReply} allReplies={allReplies}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RepliesSection({replies,postId,userRegNum,avatarMap,identityMap,onUpvoteReply,onReply}){
+  const [showReplies,setShowReplies]=useState(true);
+  // Only top-level replies (no parent)
+  const topLevel=replies.filter(r=>!r.parent_reply_id);
+  const replyCount=replies.length;
+
+  return(
+    <div style={{marginTop:14}}>
+      {/* Toggle bar */}
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:showReplies&&replyCount>0?12:0}}>
+        {replyCount>0&&(
+          <button onClick={()=>setShowReplies(s=>!s)} style={{display:"flex",alignItems:"center",gap:5,background:"none",border:"none",cursor:"pointer",fontSize:13,color:"var(--text-muted)",fontWeight:600,padding:0}}>
+            <span style={{fontSize:15}}>{showReplies?"▲":"▼"}</span>
+            {showReplies?"Hide":"Show"} {replyCount} {replyCount===1?"reply":"replies"}
+          </button>
+        )}
+      </div>
+      {/* Replies tree */}
+      {showReplies&&replyCount>0&&(
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}>
+          {topLevel.map(r=>(
+            <ReplyItem key={r.id} r={r} postId={postId} depth={0}
+              userRegNum={userRegNum} avatarMap={avatarMap} identityMap={identityMap}
+              onUpvoteReply={onUpvoteReply} onReply={onReply} allReplies={replies}/>
+          ))}
+        </div>
+      )}
+      {/* Main reply box always visible */}
+      <ReplyBox onSubmit={text=>onReply(postId,text,null)}/>
+    </div>
+  );
+}
+
 function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onReply,onUpvoteReply,onPin,onDelete,expanded,onToggle}){
   const [confirmDelete,setConfirmDelete]=useState(false);
   const canDelete=isAdmin||post.reg_num===userRegNum;
@@ -402,27 +487,15 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
               </div>
             </div>
           )}
-          {(post.replies||[]).length>0&&(
-            <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:12}}>
-              {post.replies.map(r=>(
-                <div key={r.id} style={{display:"flex",gap:10,paddingLeft:16,borderLeft:"2px solid var(--accent-dim)"}}>
-                  <Avatar name={r.author} size={28} photoUrl={avatarMap?.[r.reg_num]||null}/>
-                  <div style={{flex:1}}>
-                    <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:3,flexWrap:"wrap"}}>
-                      <span style={{fontWeight:700,fontSize:13,color:getColor(r.author)}}>{r.author}</span>
-                      {identityMap?.[r.reg_num]&&r.reg_num&&(
-                        <span style={{fontSize:11,color:"var(--text-muted)",fontWeight:500}}>{STUDENT_NAMES[r.reg_num]||""} · {r.reg_num}</span>
-                      )}
-                      <span style={{fontSize:11,color:"var(--text-muted)"}}>{timeAgo(r.created_at)}</span>
-                    </div>
-                    <p style={{margin:"0 0 6px",fontSize:14,color:"var(--text-secondary)",lineHeight:1.6}}>{r.body}</p>
-                    <UpvoteBtn count={(r.upvotes||[]).length} active={(r.upvotes||[]).includes(userRegNum)} onClick={()=>onUpvoteReply(post.id,r.id)}/>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <ReplyBox onSubmit={text=>onReply(post.id,text)}/>
+          <RepliesSection
+            replies={post.replies||[]}
+            postId={post.id}
+            userRegNum={userRegNum}
+            avatarMap={avatarMap}
+            identityMap={identityMap}
+            onUpvoteReply={onUpvoteReply}
+            onReply={onReply}
+          />
         </div>
       )}
       {!expanded&&(
@@ -679,11 +752,21 @@ function ForumApp({session,onLogout}){
     }
   };
 
-  const addReply=async(postId,text)=>{
+  const addReply=async(postId,text,parentReplyId=null)=>{
     const post=posts.find(p=>p.id===postId);if(!post)return;
-    await sb.from("replies").insert({id:`r${Date.now()}`,post_id:postId,author:displayName,reg_num:regNum,body:text});
+    const newReply={id:`r${Date.now()}`,post_id:postId,author:displayName,reg_num:regNum,body:text};
+    if(parentReplyId) newReply.parent_reply_id=parentReplyId;
+    await sb.from("replies").insert(newReply);
     const replyLabel=post.title||post.body.slice(0,40)+(post.body.length>40?"...":"");
+    // Notify post author (unless replying to own post)
     if(post.reg_num!==regNum) await addNotif(post.reg_num,`${displayName} replied to your post "${replyLabel}"`,"💬");
+    // Notify parent reply author if nested reply
+    if(parentReplyId){
+      const parentReply=(post.replies||[]).find(r=>r.id===parentReplyId);
+      if(parentReply&&parentReply.reg_num!==regNum&&parentReply.reg_num!==post.reg_num){
+        await addNotif(parentReply.reg_num,`${displayName} replied to your comment on "${replyLabel}"`,"↩");
+      }
+    }
     const mentions=extractMentions(text);
     for(const m of mentions){ if(m!==displayName&&m!==post.author) await addNotif(m,`${displayName} mentioned you in a reply on "${replyLabel}"`,"💬"); }
   };
