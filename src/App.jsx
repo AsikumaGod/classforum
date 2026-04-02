@@ -378,7 +378,8 @@ function PostCard({post,userRegNum,isAdmin,identityMap,avatarMap,onUpvote,onRepl
             {post.pinned&&<span style={{fontSize:11,color:"var(--accent)",fontWeight:700}}>📌 Pinned</span>}
             <span style={{fontSize:12,color:"var(--text-muted)",marginLeft:"auto"}}>{timeAgo(post.created_at)}</span>
           </div>
-          {post.title?<h3 onClick={onToggle} style={{margin:0,fontSize:17,fontWeight:700,color:"var(--text)",cursor:"pointer",lineHeight:1.3}}>{post.title}</h3>:<p onClick={onToggle} style={{margin:0,fontSize:15,color:"var(--text-secondary)",cursor:"pointer",lineHeight:1.5,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{post.body}</p>}
+          {post.title&&<h3 onClick={onToggle} style={{margin:0,fontSize:17,fontWeight:700,color:"var(--text)",cursor:"pointer",lineHeight:1.3}}>{post.title}</h3>}
+          {!post.title&&!expanded&&<p onClick={onToggle} style={{margin:0,fontSize:15,color:"var(--text-secondary)",cursor:"pointer",lineHeight:1.5,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{post.body}</p>}
         </div>
       </div>
       {expanded&&(
